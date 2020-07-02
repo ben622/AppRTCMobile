@@ -1,0 +1,2 @@
+include ':app', ':base_java', ':audio_device_java', ':sdk'
+rootProject.name='AppRTCMobile'
