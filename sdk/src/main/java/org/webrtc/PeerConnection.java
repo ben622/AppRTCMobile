@@ -17,6 +17,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.webrtc.CandidatePairChangeEvent;
 import org.webrtc.DataChannel;
 import org.webrtc.MediaStreamTrack;
@@ -260,7 +263,18 @@ public class PeerConnection {
     }
 
     public static Builder builder(String uri) {
-      return new Builder(Collections.singletonList(uri));
+      List<String> strings = new ArrayList<>();
+      try {
+        JSONArray jsonArray = new JSONArray(uri);
+        for (int i = 0; i < jsonArray.length(); i++) {
+          strings.add(jsonArray.getString(i));
+        }
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+
+      //return new Builder(Collections.singletonList(uri));
+      return new Builder(strings);
     }
 
     public static Builder builder(List<String> urls) {

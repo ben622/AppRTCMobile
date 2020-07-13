@@ -138,22 +138,22 @@ public class RoomParametersFetcher {
         }
       }
       // Request TURN servers.
-      /*if (!isTurnPresent && !roomJson.optString("ice_server_url").isEmpty()) {
+      if (!isTurnPresent && !roomJson.optString("ice_server_url").isEmpty()) {
         List<PeerConnection.IceServer> turnServers = requestTurnServers(roomJson.getString("ice_server_url"));
         for (PeerConnection.IceServer turnServer : turnServers) {
           Log.d(TAG, "TurnServer: " + turnServer);
           iceServers.add(turnServer);
         }
-      }*/
+      }
 
       SignalingParameters params = new SignalingParameters(
           iceServers, initiator, clientId, wssUrl, wssPostUrl, offerSdp, iceCandidates);
       events.onSignalingParametersReady(params);
     } catch (JSONException e) {
       events.onSignalingParametersError("Room JSON parsing error: " + e.toString());
-    } /*catch (IOException e) {
+    } catch (IOException e) {
       events.onSignalingParametersError("Room IO error: " + e.toString());
-    }*/
+    }
   }
 
   // Requests & returns a TURN ICE Server based on a request URL.  Must be run
@@ -208,10 +208,11 @@ public class RoomParametersFetcher {
       JSONObject server = servers.getJSONObject(i);
       String url = server.getString("urls");
       String credential = server.has("credential") ? server.getString("credential") : "";
-        PeerConnection.IceServer turnServer =
-            PeerConnection.IceServer.builder(url)
-              .setPassword(credential)
-              .createIceServer();
+      PeerConnection.IceServer turnServer =
+              PeerConnection.IceServer.builder(url)
+                      .setUsername("ben622")
+                      .setPassword(credential)
+                      .createIceServer();
       ret.add(turnServer);
     }
     return ret;

@@ -1,12 +1,4 @@
-/*
- *  Copyright 2015 The WebRTC Project Authors. All rights reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
 
 package org.appspot.apprtc.util;
 
@@ -16,14 +8,26 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Scanner;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Asynchronous http requests implementation.
  */
 public class AsyncHttpURLConnection {
   private static final int HTTP_TIMEOUT_MS = 8000;
-  private static final String HTTP_ORIGIN = "https://appr.tc";
+  private static final String HTTP_ORIGIN = "https://www.zhangchuany.com";
   private final String method;
   private final String url;
   private final String message;
@@ -35,6 +39,7 @@ public class AsyncHttpURLConnection {
    */
   public interface AsyncHttpEvents {
     void onHttpError(String errorMessage);
+
     void onHttpComplete(String response);
   }
 
@@ -50,11 +55,47 @@ public class AsyncHttpURLConnection {
   }
 
   public void send() {
-    new Thread(this ::sendHttpMessage).start();
+    Runnable runHttp =new Runnable() {
+      @Override
+      public void run() {
+        sendHttpMessage();
+      }
+    };
+    new Thread(runHttp).start();
+  }
+  public class MyX509TrustManager implements X509TrustManager {
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType) throws
+            CertificateException {
+
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType) throws
+            CertificateException {
+
+    }
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+      return null;
+    }
   }
 
   private void sendHttpMessage() {
     try {
+      SSLContext sslcontext = SSLContext.getInstance("SSL");
+      TrustManager[] tm = {new MyX509TrustManager()};
+      sslcontext.init(null, tm, new SecureRandom());
+      HostnameVerifier ignoreHostnameVerifier = new HostnameVerifier() {
+        public boolean verify(String s, SSLSession sslsession) {
+          System.out.println("WARNING: Hostname is not matched for cert.");
+          return true;
+        }
+      };
+      HttpsURLConnection.setDefaultHostnameVerifier(ignoreHostnameVerifier);
+      HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
       HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
       byte[] postData = new byte[0];
       if (message != null) {
@@ -90,7 +131,7 @@ public class AsyncHttpURLConnection {
       int responseCode = connection.getResponseCode();
       if (responseCode != 200) {
         events.onHttpError("Non-200 response to " + method + " to URL: " + url + " : "
-            + connection.getHeaderField(null));
+                + connection.getHeaderField(null));
         connection.disconnect();
         return;
       }
@@ -103,12 +144,16 @@ public class AsyncHttpURLConnection {
       events.onHttpError("HTTP " + method + " to " + url + " timeout");
     } catch (IOException e) {
       events.onHttpError("HTTP " + method + " to " + url + " error: " + e.getMessage());
+    } catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    } catch (KeyManagementException e) {
+      e.printStackTrace();
     }
   }
 
   // Return the contents of an InputStream as a String.
   private static String drainStream(InputStream in) {
-    Scanner s = new Scanner(in, "UTF-8").useDelimiter("\\A");
+    Scanner s = new Scanner(in).useDelimiter("\\A");
     return s.hasNext() ? s.next() : "";
   }
 }

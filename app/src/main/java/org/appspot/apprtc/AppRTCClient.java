@@ -88,8 +88,7 @@ public interface AppRTCClient {
     public SignalingParameters(List<PeerConnection.IceServer> iceServers, boolean initiator,
         String clientId, String wssUrl, String wssPostUrl, SessionDescription offerSdp,
         List<IceCandidate> iceCandidates) {
-      //this.iceServers =  iceServers;
-      this.iceServers =  new ArrayList<>();
+      this.iceServers =  iceServers;
       this.initiator = initiator;
       this.clientId = clientId;
       this.wssUrl = wssUrl;
